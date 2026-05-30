@@ -1,0 +1,134 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "srvcs-rank",
+    "description": "",
+    "license": {
+      "name": "Apache-2.0",
+      "identifier": "Apache-2.0"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [],
+        "summary": "`GET /` — service identity (srvcs service standard).",
+        "operationId": "index",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Info"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [],
+        "summary": "`POST /` — the 1-indexed rank of `value` within `values`.",
+        "description": "This service does no comparison of its own. For each element `v` of `values`\nit asks `srvcs-lessthan` whether `v < value`, counting how many are strictly\nless. The rank is `count + 1`, so `rank([10,20,30], 20) == 2` and\n`rank([10,20,30], 5) == 1`. If `lessthan` rejects an operand the `422` is\nforwarded; if it is unreachable this service reports itself degraded rather\nthan guessing.",
+        "operationId": "evaluate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "an operand is not a valid integer (forwarded from srvcs-lessthan)"
+          },
+          "500": {
+            "description": "srvcs-lessthan returned an unusable response"
+          },
+          "503": {
+            "description": "the srvcs-lessthan dependency is unavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EvalRequest": {
+        "type": "object",
+        "required": [
+          "values",
+          "value"
+        ],
+        "properties": {
+          "value": {
+            "type": "object",
+            "description": "The value whose 1-indexed rank is computed."
+          },
+          "values": {
+            "type": "object",
+            "description": "The list of integers to rank `value` against."
+          }
+        }
+      },
+      "Info": {
+        "type": "object",
+        "required": [
+          "service",
+          "concern",
+          "depends_on"
+        ],
+        "properties": {
+          "concern": {
+            "type": "string"
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "service": {
+            "type": "string"
+          }
+        }
+      },
+      "RankResponse": {
+        "type": "object",
+        "required": [
+          "values",
+          "value",
+          "result"
+        ],
+        "properties": {
+          "result": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The 1-indexed rank: one plus the count of elements strictly less than\n`value`."
+          },
+          "value": {
+            "type": "object"
+          },
+          "values": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}
